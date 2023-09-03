@@ -48,12 +48,12 @@ fn analyse_lines(lines: Lines<BufReader<File>>, section_title: &String, logger: 
     for line in lines {
         if let Ok(line) = line {
             if !todo_section {
-                if line.contains("##") && line.contains(section_title) {
+                if line.contains("# ") && line.contains(section_title) {
                     todo_section = true;
                     continue;
                 }
             } else {
-                if line.contains("##") {
+                if line.contains("# ") {
                     todo_section = false;
                     print_section(&todo_subsection_title, &open_todos_per_subsection, logger);
                     continue;
