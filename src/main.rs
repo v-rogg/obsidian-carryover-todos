@@ -1,9 +1,10 @@
-use chrono::{Duration, NaiveDate};
 use std::fmt::Error;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Lines};
 use std::path::Path;
 use std::{env, io};
+
+use chrono::{Duration, NaiveDate};
 
 #[cfg(test)]
 mod test;
@@ -40,7 +41,11 @@ fn main() -> Result<(), Error> {
     Ok(())
 }
 
-fn analyse_lines(lines: Lines<BufReader<File>>, section_title: &String, logger: &mut dyn logger::Logger) {
+fn analyse_lines(
+    lines: Lines<BufReader<File>>,
+    section_title: &String,
+    logger: &mut dyn logger::Logger,
+) {
     let mut todo_section = false;
     let mut todo_subsection_title: Option<String> = None;
     let mut open_todos_per_subsection: Vec<String> = Vec::new();
@@ -86,9 +91,11 @@ fn analyse_lines(lines: Lines<BufReader<File>>, section_title: &String, logger: 
     print_section(&todo_subsection_title, &open_todos_per_subsection, logger);
 }
 
-
-
-fn print_section(todo_subsection_title: &Option<String>, open_todos_per_subsection: &Vec<String>, logger: &mut dyn logger::Logger) {
+fn print_section(
+    todo_subsection_title: &Option<String>,
+    open_todos_per_subsection: &Vec<String>,
+    logger: &mut dyn logger::Logger,
+) {
     if !open_todos_per_subsection.is_empty() {
         if let Some(title) = todo_subsection_title {
             logger.log(format!("{}", title));
