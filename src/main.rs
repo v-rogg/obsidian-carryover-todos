@@ -5,11 +5,16 @@ use std::path::Path;
 use std::{env, io};
 
 use chrono::{Duration, NaiveDate};
+use regex::Regex;
 
 #[cfg(test)]
 mod test;
 
 mod logger;
+
+const TODO_SCHEMA_TO_COPY: [&str; 2] = ["- [/]", "- [ ]"];
+const TODO_SCHEMA_TO_CLEAR: [&str; 1] = ["- [>]"];
+const SUBSECTION_SCHEMA: &str = "**";
 
 fn main() -> Result<(), Error> {
     let args: Vec<String> = env::args().collect();
@@ -64,24 +69,20 @@ fn analyse_lines(
                     continue;
                 }
 
-                if line.contains("**") {
+                if line.contains(SUBSECTION_SCHEMA) {
                     print_section(&todo_subsection_title, &open_todos_per_subsection, logger);
                     todo_subsection_title = Some(String::from(line));
                     open_todos_per_subsection.clear();
                     continue;
                 }
 
-                if line.contains("- [>]") {
-                    open_todos_per_subsection.push(line.replace("- [>]", "- [ ]"));
+                if TODO_SCHEMA_TO_CLEAR.iter().any(|schema| line.contains(schema)) {
+                    let schema = Regex::new(r"- \[.\]").unwrap();
+                    open_todos_per_subsection.push(schema.replace(line.as_str(), "- [ ]").to_string());
                     continue;
                 }
 
-                if line.contains("- [/]") {
-                    open_todos_per_subsection.push(line);
-                    continue;
-                }
-
-                if line.contains("- [ ]") {
+                if TODO_SCHEMA_TO_COPY.iter().any(|schema| line.contains(schema)) {
                     open_todos_per_subsection.push(line);
                     continue;
                 }
