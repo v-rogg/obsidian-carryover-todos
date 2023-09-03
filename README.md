@@ -1,6 +1,6 @@
 # Carryover Script for Obsidian Daily Notes To-Dos
-Rust script for the [Templater](https://github.com/SilentVoid13/Templater) plugin to carryover uncompleted To-dos from
-my [Obsidian](https://obsidian.md) vault's Daily notes.
+Rust script for the [Templater](https://github.com/SilentVoid13/Templater) [Obsidian](https://obsidian.md) plugin to carryover uncompleted To-dos from
+my vault's daily notes.
 
 My Daily notes have a section looking like this when filled:
 ```markdown
