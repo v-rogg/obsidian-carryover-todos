@@ -60,12 +60,13 @@ fn analyse_lines(
             if !todo_section {
                 if line.contains("# ") && line.contains(section_title) {
                     todo_section = true;
+                    todo_subsection_title = None;
+                    open_todos_per_subsection.clear();
                     continue;
                 }
             } else {
                 if line.contains("# ") {
                     todo_section = false;
-                    print_section(&todo_subsection_title, &open_todos_per_subsection, logger);
                     continue;
                 }
 
