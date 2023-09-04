@@ -1,22 +1,19 @@
-use std::fmt::Error;
-use std::fs::File;
-use std::io::{BufRead, BufReader, Lines};
-use std::path::Path;
 use std::{env, io};
-
+use crate::helpers::{read_lines_to_vec, write_lines};
 use chrono::{Duration, NaiveDate};
 use regex::Regex;
 
+mod helpers;
+mod logger;
 #[cfg(test)]
 mod test;
 
-mod logger;
-
-const TODO_SCHEMA_TO_COPY: [&str; 2] = ["- [/]", "- [ ]"];
+const TODO_SCHEMA_TO_COPY_AND_UPDATE: [&str; 1] = ["- [ ]"];
+const TODO_SCHEMA_TO_COPY: [&str; 1] = ["- [/]"];
 const TODO_SCHEMA_TO_CLEAR: [&str; 1] = ["- [>]"];
 const SUBSECTION_SCHEMA: &str = "**";
 
-fn main() -> Result<(), Error> {
+fn main() -> io::Result<()> {
     let args: Vec<String> = env::args().collect();
 
     let daily_notes_dir: &String = &args[1];
@@ -39,58 +36,86 @@ fn main() -> Result<(), Error> {
         previous_file_date.format("%Y-%m-%d")
     );
 
-    if let Ok(lines) = read_lines(file_path) {
-        analyse_lines(lines, &section_title, &mut logger::ConsoleLogger::default());
-    }
+    let lines = read_lines_to_vec(file_path.as_str());
+    let updated_lines = analyse_lines(lines, &section_title, &mut logger::ConsoleLogger::default());
+
+    write_lines(&file_path, &updated_lines)?;
 
     Ok(())
 }
 
 fn analyse_lines(
-    lines: Lines<BufReader<File>>,
+    lines: Vec<String>,
     section_title: &String,
     logger: &mut dyn logger::Logger,
-) {
+) -> Vec<String> {
     let mut todo_section = false;
     let mut todo_subsection_title: Option<String> = None;
     let mut open_todos_per_subsection: Vec<String> = Vec::new();
 
+    let mut updated_lines: Vec<String> = Vec::new();
+
     for line in lines {
-        if let Ok(line) = line {
-            if !todo_section {
-                if line.contains("# ") && line.contains(section_title) {
-                    todo_section = true;
-                    todo_subsection_title = None;
-                    open_todos_per_subsection.clear();
-                    continue;
-                }
-            } else {
-                if line.contains("# ") {
-                    todo_section = false;
-                    continue;
-                }
+        // updated_lines.push(line.clone());
 
-                if line.contains(SUBSECTION_SCHEMA) {
-                    print_section(&todo_subsection_title, &open_todos_per_subsection, logger);
-                    todo_subsection_title = Some(String::from(line));
-                    open_todos_per_subsection.clear();
-                    continue;
-                }
+        if !todo_section {
+            if line.contains("# ") && line.contains(section_title) {
+                todo_section = true;
+                todo_subsection_title = None;
+                open_todos_per_subsection.clear();
+                updated_lines.push(line);
+                continue;
+            }
+        } else {
+            if line.contains("# ") {
+                todo_section = false;
+                updated_lines.push(line);
+                continue;
+            }
 
-                if TODO_SCHEMA_TO_CLEAR.iter().any(|schema| line.contains(schema)) {
-                    let schema = Regex::new(r"- \[.\]").unwrap();
-                    open_todos_per_subsection.push(schema.replace(line.as_str(), "- [ ]").to_string());
-                    continue;
-                }
+            if TODO_SCHEMA_TO_CLEAR
+                .iter()
+                .any(|schema| line.contains(schema))
+            {
+                let schema = Regex::new(r"- \[.]").unwrap();
+                open_todos_per_subsection.push(schema.replace(line.as_str(), "- [ ]").to_string());
+                updated_lines.push(line);
+                continue;
+            }
 
-                if TODO_SCHEMA_TO_COPY.iter().any(|schema| line.contains(schema)) {
-                    open_todos_per_subsection.push(line);
-                    continue;
-                }
+            if TODO_SCHEMA_TO_COPY
+                .iter()
+                .any(|schema| line.contains(schema))
+            {
+                open_todos_per_subsection.push(line.clone());
+                updated_lines.push(line);
+                continue;
+            }
+
+            if TODO_SCHEMA_TO_COPY_AND_UPDATE
+                .iter()
+                .any(|schema| line.contains(schema))
+            {
+                open_todos_per_subsection.push(line.clone());
+                let schema = Regex::new(r"- \[.]").unwrap();
+                updated_lines.push(schema.replace(line.as_str(), "- [>]").to_string());
+                continue;
+            }
+
+            if line.contains(SUBSECTION_SCHEMA) {
+                print_section(&todo_subsection_title, &open_todos_per_subsection, logger);
+                todo_subsection_title = Some(String::from(line.clone()));
+                open_todos_per_subsection.clear();
+                updated_lines.push(line);
+                continue;
             }
         }
+
+        updated_lines.push(line);
     }
+
     print_section(&todo_subsection_title, &open_todos_per_subsection, logger);
+    return updated_lines;
 }
 
 fn print_section(
@@ -108,12 +133,4 @@ fn print_section(
         }
         logger.log("".to_string());
     }
-}
-
-fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
-where
-    P: AsRef<Path>,
-{
-    let file = File::open(filename)?;
-    Ok(io::BufReader::new(file).lines())
 }

@@ -2,12 +2,14 @@
 
 **General**
 - [x] Done
-- [/] **Half-done**
+- [/] Half-done
 - [-] Cancelled
 
 **Another Section**
 - [>] Delayed
-- [ ] Uncompleted
+- [>] Uncompleted
+
+## Empty Section
 
 ## Another section
 Some text
