@@ -1,77 +1,64 @@
 use super::*;
 use crate::helpers::{read_lines_to_vec, write_lines};
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+
+macro_rules! assert_eq_logger {
+    ($filename: expr, $logger: expr $(,)?) => {
+        let correct_lines = read_lines_to_vec(format!("./test/vault/correct/{}", &$filename));
+        assert_eq!($logger.stack.as_slice(), correct_lines);
+    };
+}
+
+macro_rules! assert_eq_files {
+    ($filename: expr $(,)?) => {
+        let new_lines = read_lines_to_vec(format!("./test/vault/tmp/{}", &$filename));
+        let corrected_lines = read_lines_to_vec(format!("./test/vault/correct/{}", &$filename));
+        assert_eq!(new_lines, corrected_lines);
+    };
+}
 
 #[test]
 fn test_analyse_rows_0() {
+    let filename = "2023-09-01.md";
     let mut test_logger = logger::TestLogger::default();
-    let lines = read_lines_to_vec("./test/vault/2023-09-01.md");
-    analyse_lines(
-        lines,
-        &"To-Do's".to_string(),
-        &mut test_logger,
-    );
-    assert_eq!(
-        [
-            "**General**",
-            "- [/] Half-done ⭘",
-            "",
-            "**Another Section**",
-            "- [ ] Delayed ⭘",
-            "- [ ] Uncompleted ⭘",
-            ""
-        ],
-        test_logger.stack.as_slice()
-    );
+
+    let lines = read_lines_to_vec(format!("./test/vault/{}", filename));
+    analyse_lines(lines, &"To-Do's".to_string(), &mut test_logger);
+
+    assert_eq_logger!(filename, test_logger);
 }
 
 #[test]
 fn test_analyse_rows_1() {
+    let filename = "2023-09-02.md";
     let mut test_logger = logger::TestLogger::default();
-    let lines = read_lines_to_vec("./test/vault/2023-09-02.md");
-    analyse_lines(
-        lines,
-        &"To-Do's".to_string(),
-        &mut test_logger,
-    );
-    assert_eq!(
-        [
-            "**General**",
-            "- [/] **Half-done** ⭘",
-            "",
-            "**Another Section**",
-            "- [ ] Delayed ⭘",
-            "- [ ] Uncompleted ⭘",
-            ""
-        ],
-        test_logger.stack.as_slice()
-    );
+
+    let lines = read_lines_to_vec(format!("./test/vault/{}", filename));
+    analyse_lines(lines, &"To-Do's".to_string(), &mut test_logger);
+
+    assert_eq_logger!(filename, test_logger);
 }
 
 #[test]
-fn test_update_file() -> io::Result<()> {
-    setup_test_file("./test/vault/2023-09-03.md").ok();
-
+fn test_update_file() {
+    let filename = "2023-09-03.md";
     let mut test_logger = logger::TestLogger::default();
-    let lines = read_lines_to_vec("./test/vault/tmp/2023-09-03.md");
-    let updated_lines = analyse_lines(
-        lines,
-        &"To-Do's".to_string(),
-        &mut test_logger,
-    );
+    setup_test_file(format!("./test/vault/{}", filename)).ok();
 
-    write_lines("./test/vault/tmp/2023-09-03.md", &updated_lines)?;
+    let lines = read_lines_to_vec(format!("./test/vault/tmp/{}", filename));
+    let updated_lines = analyse_lines(lines, &"To-Do's".to_string(), &mut test_logger);
 
-    let new_lines = read_lines_to_vec("./test/vault/tmp/2023-09-03.md");
-    let corrected_lines = read_lines_to_vec("./test/vault/2023-09-03-corrected.md");
+    write_lines(format!("./test/vault/tmp/{}", filename), &updated_lines).ok();
 
-    assert_eq!(new_lines, corrected_lines);
-    Ok(())
+    assert_eq_files!(filename);
 }
 
-fn setup_test_file(path: &str) -> io::Result<()> {
-    let source = PathBuf::from(path);
+fn setup_test_file<P>(filename: P) -> io::Result<()>
+where
+    P: AsRef<Path>,
+{
+    let source = PathBuf::from(filename.as_ref());
     let mut destination = source.clone();
     destination.pop();
     destination.push("tmp");

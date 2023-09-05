@@ -3,9 +3,9 @@ use std::io;
 use std::io::{BufRead, BufReader, Lines, Result, Write};
 use std::path::Path;
 
-pub fn read_lines_to_vec(path: &str) -> Vec<String> {
+pub fn read_lines_to_vec<P>(filename: P) -> Vec<String> where P: AsRef<Path> {
     let mut lines_vec: Vec<String> = Vec::new();
-    if let Ok(lines) = read_lines(path) {
+    if let Ok(lines) = read_lines(filename) {
         for line in lines {
             match line {
                 Ok(line_content) => {
