@@ -1,6 +1,6 @@
 [package]
 name = "carryover_todos"
-authors = "Valentin Rogg @ v-rogg"
+authors = ["Valentin Rogg @ v-rogg"]
 version = "0.1.3"
 description = "Rust script for the Templater Obsidian plugin to carryover uncompleted To-dos from my vault's daily notes."
 edition = "2021"
