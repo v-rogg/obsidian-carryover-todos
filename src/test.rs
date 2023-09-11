@@ -24,7 +24,8 @@ fn test_analyse_rows_0() {
     let mut test_logger = logger::TestLogger::default();
 
     let lines = read_lines_to_vec(format!("./test/vault/{}", filename));
-    analyse_lines(lines, &"To-Do's".to_string(), &mut test_logger);
+    analyse_lines(&lines, &"To-Do".to_string(), &mut test_logger);
+    analyse_lines_reverse(&lines);
 
     assert_eq_logger!(filename, test_logger);
 }
@@ -35,7 +36,8 @@ fn test_analyse_rows_1() {
     let mut test_logger = logger::TestLogger::default();
 
     let lines = read_lines_to_vec(format!("./test/vault/{}", filename));
-    analyse_lines(lines, &"To-Do's".to_string(), &mut test_logger);
+    analyse_lines(&lines, &"To-Do".to_string(), &mut test_logger);
+    analyse_lines_reverse(&lines);
 
     assert_eq_logger!(filename, test_logger);
 }
@@ -47,7 +49,7 @@ fn test_update_file() {
     setup_test_file(format!("./test/vault/{}", filename)).ok();
 
     let lines = read_lines_to_vec(format!("./test/vault/tmp/{}", filename));
-    let updated_lines = analyse_lines(lines, &"To-Do's".to_string(), &mut test_logger);
+    let updated_lines = analyse_lines_reverse(&lines);
 
     write_lines(format!("./test/vault/tmp/{}", filename), &updated_lines).ok();
 
